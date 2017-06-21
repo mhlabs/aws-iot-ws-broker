@@ -2,6 +2,11 @@
 
 ## Usage:
 
+### Installation
+```
+npm i -s @mhlabs/aws-iot-mqtt-broker
+```
+
 ### Connecting
 ```
 const broker = require('@mhlabs/aws-iot-mqtt-broker')
