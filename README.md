@@ -16,6 +16,7 @@ ws.subscribe('your/topic');
 ### Send message
 ```
 ws.send('your/topic', message);
+```
 
 ### Handle message:
 ```
