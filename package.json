@@ -1,0 +1,26 @@
+{
+  "name": "@mhdev/aws-iot-mqtt-broker",
+  "version": "1.0.0",
+  "description": "A broker for client side websocket pub/sub using AWS IoT",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhlabs/aws-iot-mqtt-broker.git"
+  },
+  "author": "mhdev",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mhlabs/aws-iot-mqtt-broker/issues"
+  },
+  "homepage": "https://github.com/mhlabs/aws-iot-mqtt-broker#readme",
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "mocha": "^3.4.2"
+  },
+  "dependencies": {
+    "aws-iot-device-sdk": "^1.0.14"
+  }
+}
