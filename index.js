@@ -7,9 +7,9 @@ module.exports = function (keysUrl) {
         throw new Error("Url missing");
     }
     var client;
-    let iotTopics = [];
+    var iotTopics = [];
     var WS = {
-        connect: (keysUrl) => {
+        connect: function(keysUrl) {
             var xhr = createCORSRequest('GET', keysUrl);
 
             xhr.send(null);
@@ -46,11 +46,11 @@ module.exports = function (keysUrl) {
             }
         },
 
-        send: (topic, message) => {
+        send: function(topic, message) {
             client.publish(topic, message);
         },
 
-        subscribe: (topic) => {
+        subscribe: function(topic) {
             if (client) {
                 client.subscribe(topic);
                 console.log("subscribed to " + topic);
@@ -60,7 +60,7 @@ module.exports = function (keysUrl) {
             }
         },
 
-        onConnect: () => {
+        onConnect: function() {
             for (var i = 0; i < iotTopics.length; i++) {
                 console.log("trying to connect to " + iotTopics[i])
                 WS.subscribe(iotTopics[i]);
@@ -68,17 +68,17 @@ module.exports = function (keysUrl) {
             iotTopics = [];
         },
 
-        onMessage: (topic, message) => {
+        onMessage: function(topic, message) {
             console.log(topic + " received: " + message);
         },
 
-        onClose: () => {
+        onClose: function() {
             console.log('Connection failed');
         },
 
-        onError: () => { console.log('Error'); },
-        onReconnect: () => { console.log('Reconnected'); },
-        onOffline: () => { console.log('Offline'); }
+        onError: function() { console.log('Error'); },
+        onReconnect: function() { console.log('Reconnected'); },
+        onOffline: function() { console.log('Offline'); }
     };
 
     WS.connect(keysUrl);

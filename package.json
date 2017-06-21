@@ -1,6 +1,6 @@
 {
-  "name": "@mhdev/aws-iot-mqtt-broker",
-  "version": "1.0.0",
+  "name": "@mhlabs/aws-iot-mqtt-broker",
+  "version": "1.0.3",
   "description": "A broker for client side websocket pub/sub using AWS IoT",
   "main": "index.js",
   "scripts": {
