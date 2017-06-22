@@ -4,12 +4,12 @@
 
 ### Installation
 ```
-npm i -s @mhlabs/aws-iot-mqtt-broker
+npm i -s @mhlabs/aws-iot-ws-broker
 ```
 
 ### Connecting
 ```
-const broker = require('@mhlabs/aws-iot-mqtt-broker')
+const broker = require('@mhlabs/aws-iot-ws-broker')
 const ws = IoT('https://endpoint-returning-temporary-AWS-access-keys.com');
 ```
 
