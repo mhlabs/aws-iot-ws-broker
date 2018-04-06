@@ -30,43 +30,52 @@ export default class AwsIot {
     });
 
     AWS.config.credentials = creds;
-    this.log('Connecting with:', AWS.config.credentials);
 
-    const iot = new AWS.Iot();
+    creds.get((credsErr) => {
 
-    iot.describeEndpoint({}, (err, data) => {
-
-      if (err) {
-        this.log('Error getting endpoint address', err);
+      if (credsErr) {
+        this.log('Error!', credsErr);
         return;
       }
 
-      const config: DeviceOptions = {
-        region: AWS.config.region,
-        protocol: 'wss',
-        accessKeyId: creds.accessKeyId,
-        secretKey: creds.secretAccessKey,
-        sessionToken: creds.sessionToken,
-        port: 443,
-        debug: this.debugMode,
-        host: data.endpointAddress
-      };
+      this.log('Got credentials');
 
-      this.log('Connecting with config:', config);
+      const iot = new AWS.Iot();
 
-      try {
-        this.client = new device(config);
-      } catch (deviceErr) {
-        this.log('Error creating device:', deviceErr);
-        return;
-      }
+      iot.describeEndpoint({}, (err, data) => {
 
-      this.client.on('connect', () => this.onConnect());
-      this.client.on('message', (topic: string, message: any) => this.onMessage(topic, message));
-      this.client.on('error', () => this.onError());
-      this.client.on('reconnect', () => this.onReconnect());
-      this.client.on('offline', () => this.onOffline());
-      this.client.on('close', () => this.onClose());
+        if (err) {
+          this.log('Error getting endpoint address', err);
+          return;
+        }
+
+        const config: DeviceOptions = {
+          region: AWS.config.region,
+          protocol: 'wss',
+          accessKeyId: creds.accessKeyId,
+          secretKey: creds.secretAccessKey,
+          sessionToken: creds.sessionToken,
+          port: 443,
+          debug: this.debugMode,
+          host: data.endpointAddress
+        };
+
+        this.log('Connecting with config:', config);
+
+        try {
+          this.client = new device(config);
+        } catch (deviceErr) {
+          this.log('Error creating device:', deviceErr);
+          return;
+        }
+
+        this.client.on('connect', () => this.onConnect());
+        this.client.on('message', (topic: string, message: any) => this.onMessage(topic, message));
+        this.client.on('error', () => this.onError());
+        this.client.on('reconnect', () => this.onReconnect());
+        this.client.on('offline', () => this.onOffline());
+        this.client.on('close', () => this.onClose());
+      });
     });
   }
 
