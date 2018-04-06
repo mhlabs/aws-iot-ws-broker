@@ -1,17 +1,18 @@
-import { DeviceOptions } from 'aws-iot-device-sdk';
 import { Subject } from 'rxjs/Subject';
 export default class AwsIot {
-    private config;
+    private region;
+    private identityPoolId;
+    private debugMode;
     events: Subject<{
         [key: string]: any;
         type: IotEvent;
     }>;
     private client;
     private topics;
-    constructor(config: DeviceOptions);
+    constructor(region: string, identityPoolId: string, debugMode?: boolean);
     connect(): void;
-    send(topic: any, message: any): void;
-    subscribe(topic: any): void;
+    send(topic: string, message: any): void;
+    subscribe(topic: string): void;
     unsubscribe(topic: string): void;
     private onConnect();
     private onMessage(topic, message);

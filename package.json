@@ -1,11 +1,11 @@
 {
   "name": "@mhlabs/aws-iot-ws-broker",
-  "version": "1.0.8",
+  "version": "1.2.0",
   "description": "A broker for client side websocket pub/sub using AWS IoT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p ./tsconfig.json",
     "test": "mocha --reporter spec"
   },
   "repository": {
@@ -19,12 +19,14 @@
   },
   "homepage": "https://github.com/mhlabs/aws-iot-ws-broker#readme",
   "devDependencies": {
+    "@types/aws-iot-device-sdk": "^2.1.1",
     "chai": "^4.0.2",
     "mocha": "^3.4.2",
     "typescript": "^2.8.1"
   },
   "dependencies": {
-    "aws-iot-device-sdk": "^1.0.14",
+    "aws-iot-device-sdk": "^2.2.1",
+    "aws-sdk": "^2.221.1",
     "rxjs": "^5.5.8"
   }
 }

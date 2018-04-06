@@ -1,5 +1,6 @@
 import { device, DeviceOptions } from 'aws-iot-device-sdk';
 import { Subject } from 'rxjs/Subject';
+import AWS = require('aws-sdk');
 
 export default class AwsIot {
   events = new Subject<{
@@ -7,42 +8,73 @@ export default class AwsIot {
     [key: string]: any;
   }>();
 
-  private client;
+  private client: any;
   private topics = new Array<string>();
 
-  constructor(private config: DeviceOptions) {
-    if (!this.config) {
-      throw new Error('Config is required');
+  constructor(private region: string, private identityPoolId: string, private debugMode = false) {
+    if (!this.region) {
+      throw new Error('No region value provided.');
+    }
+    if (!this.identityPoolId) {
+      throw new Error('No region value provided.');
     }
     this.connect();
   }
 
   connect() {
-    this.log('Connecting to', this.config.host);
 
-    const options: DeviceOptions = Object.assign(
-      {
+    // Make the call to obtain credentials
+    AWS.config.region = this.region;
+    const creds = new AWS.CognitoIdentityCredentials({
+      IdentityPoolId: this.identityPoolId
+    });
+
+    AWS.config.credentials = creds;
+    this.log('Connecting with:', AWS.config.credentials);
+
+    const iot = new AWS.Iot();
+
+    iot.describeEndpoint({}, (err, data) => {
+
+      if (err) {
+        this.log('Error getting endpoint address', err);
+        return;
+      }
+
+      const config: DeviceOptions = {
+        region: AWS.config.region,
         protocol: 'wss',
-        port: 443
-      },
-      this.config
-    );
+        accessKeyId: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+        sessionToken: creds.sessionToken,
+        port: 443,
+        debug: this.debugMode,
+        host: data.endpointAddress
+      };
 
-    this.client = new device(options);
+      this.log('Connecting with config:', config);
 
-    this.client.on('connect', () => this.onConnect());
-    this.client.on('message', (topic, message) => this.onMessage(topic, message));
-    this.client.on('error', () => this.onError());
-    this.client.on('reconnect', () => this.onReconnect());
-    this.client.on('offline', () => this.onOffline());
-    this.client.on('close', () => this.onClose());
+      try {
+        this.client = new device(config);
+      } catch (deviceErr) {
+        this.log('Error creating device:', deviceErr);
+        return;
+      }
+
+      this.client.on('connect', () => this.onConnect());
+      this.client.on('message', (topic: string, message: any) => this.onMessage(topic, message));
+      this.client.on('error', () => this.onError());
+      this.client.on('reconnect', () => this.onReconnect());
+      this.client.on('offline', () => this.onOffline());
+      this.client.on('close', () => this.onClose());
+    });
   }
 
-  send(topic, message) {
+  send(topic: string, message: any) {
     this.client.publish(topic, message);
   }
 
-  subscribe(topic) {
+  subscribe(topic: string) {
     if (this.client) {
       this.client.subscribe(topic);
       this.log('Subscribed to topic:', topic);
@@ -70,7 +102,7 @@ export default class AwsIot {
     this.topics = new Array<string>();
   }
 
-  private onMessage(topic, message) {
+  private onMessage(topic: string, message: any) {
     this.log(`Message received from topic: ${topic}`, JSON.parse(message));
     this.events.next({
       type: IotEvent.Message,
@@ -99,8 +131,8 @@ export default class AwsIot {
     this.events.next({ type: IotEvent.Offline });
   }
 
-  private log(...args) {
-    if (console && this.config.debug) {
+  private log(...args: any[]) {
+    if (console && this.debugMode) {
       console.log(...args);
     }
   }
