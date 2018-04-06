@@ -27,37 +27,43 @@ var AwsIot = /** @class */ (function () {
             IdentityPoolId: this.identityPoolId
         });
         AWS.config.credentials = creds;
-        this.log('Connecting with:', AWS.config.credentials);
-        var iot = new AWS.Iot();
-        iot.describeEndpoint({}, function (err, data) {
-            if (err) {
-                _this.log('Error getting endpoint address', err);
+        creds.get(function (credsErr) {
+            if (credsErr) {
+                _this.log('Error!', credsErr);
                 return;
             }
-            var config = {
-                region: AWS.config.region,
-                protocol: 'wss',
-                accessKeyId: creds.accessKeyId,
-                secretKey: creds.secretAccessKey,
-                sessionToken: creds.sessionToken,
-                port: 443,
-                debug: _this.debugMode,
-                host: data.endpointAddress
-            };
-            _this.log('Connecting with config:', config);
-            try {
-                _this.client = new aws_iot_device_sdk_1.device(config);
-            }
-            catch (deviceErr) {
-                _this.log('Error creating device:', deviceErr);
-                return;
-            }
-            _this.client.on('connect', function () { return _this.onConnect(); });
-            _this.client.on('message', function (topic, message) { return _this.onMessage(topic, message); });
-            _this.client.on('error', function () { return _this.onError(); });
-            _this.client.on('reconnect', function () { return _this.onReconnect(); });
-            _this.client.on('offline', function () { return _this.onOffline(); });
-            _this.client.on('close', function () { return _this.onClose(); });
+            _this.log('Got credentials');
+            var iot = new AWS.Iot();
+            iot.describeEndpoint({}, function (err, data) {
+                if (err) {
+                    _this.log('Error getting endpoint address', err);
+                    return;
+                }
+                var config = {
+                    region: AWS.config.region,
+                    protocol: 'wss',
+                    accessKeyId: creds.accessKeyId,
+                    secretKey: creds.secretAccessKey,
+                    sessionToken: creds.sessionToken,
+                    port: 443,
+                    debug: _this.debugMode,
+                    host: data.endpointAddress
+                };
+                _this.log('Connecting with config:', config);
+                try {
+                    _this.client = new aws_iot_device_sdk_1.device(config);
+                }
+                catch (deviceErr) {
+                    _this.log('Error creating device:', deviceErr);
+                    return;
+                }
+                _this.client.on('connect', function () { return _this.onConnect(); });
+                _this.client.on('message', function (topic, message) { return _this.onMessage(topic, message); });
+                _this.client.on('error', function () { return _this.onError(); });
+                _this.client.on('reconnect', function () { return _this.onReconnect(); });
+                _this.client.on('offline', function () { return _this.onOffline(); });
+                _this.client.on('close', function () { return _this.onClose(); });
+            });
         });
     };
     AwsIot.prototype.send = function (topic, message) {
