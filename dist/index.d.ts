@@ -1,4 +1,6 @@
 import { Subject } from 'rxjs/Subject';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/map';
 export default class AwsIot {
     private region;
     private identityPoolId;

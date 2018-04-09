@@ -1,5 +1,7 @@
 import { device, DeviceOptions } from 'aws-iot-device-sdk';
 import { Subject } from 'rxjs/Subject';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/map';
 import AWS = require('aws-sdk');
 
 export default class AwsIot {

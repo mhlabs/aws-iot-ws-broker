@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var aws_iot_device_sdk_1 = require("aws-iot-device-sdk");
 var Subject_1 = require("rxjs/Subject");
+require("rxjs/add/operator/filter");
+require("rxjs/add/operator/map");
 var AWS = require("aws-sdk");
 var AwsIot = /** @class */ (function () {
     function AwsIot(region, identityPoolId, debugMode) {
