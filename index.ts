@@ -62,8 +62,6 @@ export default class AwsIot {
           host: data.endpointAddress
         };
 
-        this.log('Connecting with config:', config);
-
         try {
           this.client = new device(config);
         } catch (deviceErr) {
