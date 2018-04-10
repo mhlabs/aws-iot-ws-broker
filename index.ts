@@ -13,69 +13,48 @@ export default class AwsIot {
   private client: any;
   private topics = new Array<string>();
 
-  constructor(private region: string, private identityPoolId: string, private debugMode = false) {
-    if (!this.region) {
-      throw new Error('No region value provided.');
-    }
-    if (!this.identityPoolId) {
-      throw new Error('No region value provided.');
+  constructor(private creds: AWS.CognitoIdentityCredentials, private debugMode = false) {
+    if (!creds) {
+      throw new Error('No config provided.');
     }
     this.connect();
   }
 
   connect() {
 
-    // Make the call to obtain credentials
-    AWS.config.region = this.region;
-    const creds = new AWS.CognitoIdentityCredentials({
-      IdentityPoolId: this.identityPoolId
-    });
+    const iot = new AWS.Iot();
 
-    AWS.config.credentials = creds;
+    iot.describeEndpoint({}, (err, data) => {
 
-    creds.get((credsErr) => {
-
-      if (credsErr) {
-        this.log('Error!', credsErr);
+      if (err) {
+        this.log('Error getting endpoint address', err);
         return;
       }
 
-      this.log('Got credentials');
+      const config: DeviceOptions = {
+        region: AWS.config.region,
+        protocol: 'wss',
+        accessKeyId: this.creds.accessKeyId,
+        secretKey: this.creds.secretAccessKey,
+        sessionToken: this.creds.sessionToken,
+        port: 443,
+        debug: this.debugMode,
+        host: data.endpointAddress
+      };
 
-      const iot = new AWS.Iot();
+      try {
+        this.client = new device(config);
+      } catch (deviceErr) {
+        this.log('Error creating device:', deviceErr);
+        return;
+      }
 
-      iot.describeEndpoint({}, (err, data) => {
-
-        if (err) {
-          this.log('Error getting endpoint address', err);
-          return;
-        }
-
-        const config: DeviceOptions = {
-          region: AWS.config.region,
-          protocol: 'wss',
-          accessKeyId: creds.accessKeyId,
-          secretKey: creds.secretAccessKey,
-          sessionToken: creds.sessionToken,
-          port: 443,
-          debug: this.debugMode,
-          host: data.endpointAddress
-        };
-
-        try {
-          this.client = new device(config);
-        } catch (deviceErr) {
-          this.log('Error creating device:', deviceErr);
-          return;
-        }
-
-        this.client.on('connect', () => this.onConnect());
-        this.client.on('message', (topic: string, message: any) => this.onMessage(topic, message));
-        this.client.on('error', () => this.onError());
-        this.client.on('reconnect', () => this.onReconnect());
-        this.client.on('offline', () => this.onOffline());
-        this.client.on('close', () => this.onClose());
-      });
+      this.client.on('connect', () => this.onConnect());
+      this.client.on('message', (topic: string, message: any) => this.onMessage(topic, message));
+      this.client.on('error', () => this.onError());
+      this.client.on('reconnect', () => this.onReconnect());
+      this.client.on('offline', () => this.onOffline());
+      this.client.on('close', () => this.onClose());
     });
   }
 

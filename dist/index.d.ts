@@ -1,9 +1,9 @@
 import { Subject } from 'rxjs/Subject';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
+import AWS = require('aws-sdk');
 export default class AwsIot {
-    private region;
-    private identityPoolId;
+    private creds;
     private debugMode;
     events: Subject<{
         [key: string]: any;
@@ -11,7 +11,7 @@ export default class AwsIot {
     }>;
     private client;
     private topics;
-    constructor(region: string, identityPoolId: string, debugMode?: boolean);
+    constructor(creds: AWS.CognitoIdentityCredentials, debugMode?: boolean);
     connect(): void;
     send(topic: string, message: any): void;
     subscribe(topic: string): void;
