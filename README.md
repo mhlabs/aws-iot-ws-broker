@@ -7,23 +7,26 @@
 npm i -s @mhlabs/aws-iot-ws-broker
 ```
 
-### Connecting
+### Connecting (TypeScript)
 ```
-const broker = require('@mhlabs/aws-iot-ws-broker')
-const ws = IoT('https://endpoint-returning-temporary-AWS-access-keys.com');
+import AwsIot, { IotEvent } from '@mhlabs/aws-iot-ws-broker';
+
+// credentials could be e.g. from Cognito Identity Pool
+const creds: CognitoIdentityCredentials = createCredentials();
+this.websocket = new AwsIot(creds, !environment.production);
 ```
 
 ### Subscribe to topic:
 ```
-ws.subscribe('your/topic');
+this.websocket.subscribe('your/topic');
 ```
 
 ### Send message
 ```
-ws.send('your/topic', message);
+this.websocket.send('your/topic', message);
 ```
 
 ### Handle message:
 ```
-ws.onMessage = (topic, message) => {console.log("Topic: " + topic + " received " + message)}
+this.websocket.onMessage = (topic, message) => {console.log("Topic: " + topic + " received " + message)}
 ```
