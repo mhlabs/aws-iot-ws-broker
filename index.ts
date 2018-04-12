@@ -5,22 +5,17 @@ import 'rxjs/add/operator/map';
 import AWS = require('aws-sdk');
 
 export default class AwsIot {
-  events = new Subject<{
-    type: IotEvent;
-    [key: string]: any;
-  }>();
+  public readonly events = new Subject<IotEvent>();
 
   private client: any;
   private topics = new Array<string>();
 
-  constructor(private creds: AWS.CognitoIdentityCredentials, private debugMode = false) {
+  constructor(private debugMode = false) { }
+  
+  public connect(creds: AWS.CognitoIdentityCredentials) {
     if (!creds) {
-      throw new Error('No config provided.');
+      throw new Error('No AWS Cognito credentials provided');
     }
-    this.connect();
-  }
-
-  connect() {
 
     const iot = new AWS.Iot();
 
@@ -34,9 +29,9 @@ export default class AwsIot {
       const config: DeviceOptions = {
         region: AWS.config.region,
         protocol: 'wss',
-        accessKeyId: this.creds.accessKeyId,
-        secretKey: this.creds.secretAccessKey,
-        sessionToken: this.creds.sessionToken,
+        accessKeyId: creds.accessKeyId,
+        secretKey: creds.secretAccessKey,
+        sessionToken: creds.sessionToken,
         port: 443,
         debug: this.debugMode,
         host: data.endpointAddress
@@ -58,11 +53,15 @@ export default class AwsIot {
     });
   }
 
-  send(topic: string, message: any) {
+  public disconnect() {
+    this.client = null;
+  }
+
+  public send(topic: string, message: any) {
     this.client.publish(topic, message);
   }
 
-  subscribe(topic: string) {
+  public subscribe(topic: string) {
     if (this.client) {
       this.client.subscribe(topic);
       this.log('Subscribed to topic:', topic);
@@ -72,7 +71,7 @@ export default class AwsIot {
     }
   }
 
-  unsubscribe(topic: string) {
+  public unsubscribe(topic: string) {
     if (this.client) {
       this.client.unsubscribe(topic);
       this.log('Unubscribed from topic:', topic);
@@ -81,7 +80,7 @@ export default class AwsIot {
 
   private onConnect() {
     this.log('Connected');
-    this.events.next({ type: IotEvent.Connect });
+    this.events.next({ type: IotEventType.Connect });
     for (const topic of this.topics) {
       this.log('Trying to connect to topic:', topic);
       this.subscribe(topic);
@@ -93,30 +92,30 @@ export default class AwsIot {
   private onMessage(topic: string, message: any) {
     this.log(`Message received from topic: ${topic}`, JSON.parse(message));
     this.events.next({
-      type: IotEvent.Message,
+      type: IotEventType.Message,
       topic: topic,
-      message: message
+      message: JSON.parse(message)
     });
   }
 
   private onClose() {
     this.log('Connection failed');
-    this.events.next({ type: IotEvent.Close });
+    this.events.next({ type: IotEventType.Close });
   }
 
   private onError() {
     this.log('Error');
-    this.events.next({ type: IotEvent.Error });
+    this.events.next({ type: IotEventType.Error });
   }
 
   private onReconnect() {
     this.log('Reconnected');
-    this.events.next({ type: IotEvent.Reconnect });
+    this.events.next({ type: IotEventType.Reconnect });
   }
 
   private onOffline() {
     this.log('Offline');
-    this.events.next({ type: IotEvent.Offline });
+    this.events.next({ type: IotEventType.Offline });
   }
 
   private log(...args: any[]) {
@@ -128,7 +127,13 @@ export default class AwsIot {
 
 export { DeviceOptions } from 'aws-iot-device-sdk';
 
-export enum IotEvent {
+export interface IotEvent {
+  type: IotEventType;
+  topic?: string;
+  message?: object;
+}
+
+export enum IotEventType {
   Connect = 'connect',
   Message = 'message',
   Close = 'close',
