@@ -12,7 +12,7 @@ describe('AWS IOT websocket broker', () => {
     });
 
     it('should throw an error when connecting without a config', () => {
-        expect(awsIot.connect.bind(awsIot)).to.throw(Error, 'No AWS Cognito credentials provided');        
+        expect(awsIot.connect.bind(awsIot)).to.throw(Error, 'No AWS Cognito credentials provided');
     });
 
     it('should que up subscriptions before the client is ready', () => {

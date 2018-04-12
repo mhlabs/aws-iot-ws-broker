@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc -p ./tsconfig.json",
     "test": "npm run build && mocha --reporter spec --compilers js:babel-core/register",
-    "prepublish": "npm run test"
+    "prepublishOnly": "npm run test"
   },
   "repository": {
     "type": "git",

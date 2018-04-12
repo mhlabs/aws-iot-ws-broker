@@ -11,13 +11,33 @@ export default class AwsIot {
   private topics = new Array<string>();
 
   constructor(private debugMode = false) { }
-  
-  public connect(creds: AWS.CognitoIdentityCredentials) {
+
+  public connect(creds: AWS.CognitoIdentityCredentials, policyName: string) {
     if (!creds) {
       throw new Error('No AWS Cognito credentials provided');
     }
 
     const iot = new AWS.Iot();
+
+    if (!policyName) {
+      this.createDevice(iot, creds);
+      return;
+    }
+
+    const principal = creds.identityId;
+
+    iot.attachPrincipalPolicy({ principal, policyName }, (policyErr) => {
+      if (policyErr) {
+        this.log('Error attaching policy', policyErr);
+        return;
+      }
+
+      this.createDevice(iot, creds);
+    });
+
+  }
+
+  private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials) {
 
     iot.describeEndpoint({}, (err, data) => {
 
