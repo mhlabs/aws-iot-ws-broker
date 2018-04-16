@@ -54,6 +54,7 @@ export default class AwsIot {
   }
 
   public disconnect() {
+    this.client.end();
     this.client = null;
   }
 
