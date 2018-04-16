@@ -3,6 +3,8 @@ import { Subject } from 'rxjs/Subject';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 import AWS = require('aws-sdk');
+import { Observable } from 'rxjs/Observable';
+import { Observer } from 'rxjs/Observer';
 
 export default class AwsIot {
   public readonly events = new Subject<IotEvent>();
@@ -73,9 +75,14 @@ export default class AwsIot {
     });
   }
 
-  public disconnect() {
-    this.client.end();
-    this.client = null;
+  public disconnect(): Observable<null> {
+    return Observable.create((observer: Observer<null>) => {
+      this.client.end(true, () => {
+        this.client = null;
+        observer.next(null);
+        observer.complete();
+      });
+    })
   }
 
   public send(topic: string, message: any) {
