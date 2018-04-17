@@ -54,8 +54,8 @@ export default class AwsIot {
         port: 443,
         debug: this.debugMode,
         host: data.endpointAddress,
-        baseReconnectTimeMs: 200,
-        maximumReconnectTimeMs: 3000
+        baseReconnectTimeMs: 500,
+        maximumReconnectTimeMs: 2000
       };
 
       try {
@@ -116,7 +116,6 @@ export default class AwsIot {
   }
 
   private onConnect() {
-    this.log("Connected");
     this.events.next({ type: IotEventType.Connect });
     for (const topic of this.topics) {
       this.log("Trying to connect to topic:", topic);
@@ -136,22 +135,18 @@ export default class AwsIot {
   }
 
   private onClose() {
-    this.log("Connection failed");
     this.events.next({ type: IotEventType.Close });
   }
 
   private onError(error: Error | string) {
-    this.log("Error");
     this.events.next({ type: IotEventType.Error, error: error });
   }
 
   private onReconnect() {
-    this.log("Reconnected");
     this.events.next({ type: IotEventType.Reconnect });
   }
 
   private onOffline() {
-    this.log("Offline");
     this.events.next({ type: IotEventType.Offline });
   }
 
