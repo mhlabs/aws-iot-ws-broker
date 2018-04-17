@@ -53,7 +53,9 @@ export default class AwsIot {
         sessionToken: creds.sessionToken,
         port: 443,
         debug: this.debugMode,
-        host: data.endpointAddress
+        host: data.endpointAddress,
+        baseReconnectTimeMs: 200,
+        maximumReconnectTimeMs: 3000
       };
 
       try {
