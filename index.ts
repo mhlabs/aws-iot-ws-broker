@@ -67,7 +67,7 @@ export default class AwsIot {
       this.client.on("message", (topic: string, message: any) =>
         this.onMessage(topic, message)
       );
-      this.client.on("error", () => this.onError());
+      this.client.on("error", (error: Error | string) => this.onError(error));
       this.client.on("reconnect", () => this.onReconnect());
       this.client.on("offline", () => this.onOffline());
       this.client.on("close", () => this.onClose());
@@ -138,9 +138,9 @@ export default class AwsIot {
     this.events.next({ type: IotEventType.Close });
   }
 
-  private onError() {
+  private onError(error: Error | string) {
     this.log("Error");
-    this.events.next({ type: IotEventType.Error });
+    this.events.next({ type: IotEventType.Error, error: error });
   }
 
   private onReconnect() {
@@ -166,6 +166,7 @@ export interface IotEvent {
   type: IotEventType;
   topic?: string;
   message?: object;
+  error?: Error | string;
 }
 
 export enum IotEventType {
