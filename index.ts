@@ -12,9 +12,9 @@ export default class AwsIot {
   private client!: device;
   private topics = new Array<string>();
 
-  constructor(private debugMode = false) {}
+  constructor(private debugMode = false) { }
 
-  public connect(creds: AWS.CognitoIdentityCredentials, policyName: string) {
+  public connect(creds: AWS.CognitoIdentityCredentials, policyName: string, iotEndpoint: string) {
     if (!creds) {
       throw new Error("No AWS Cognito credentials provided");
     }
@@ -22,7 +22,7 @@ export default class AwsIot {
     const iot = new AWS.Iot();
 
     if (!policyName) {
-      this.createDevice(iot, creds);
+      this.createDevice(iot, creds, iotEndpoint);
       return;
     }
 
@@ -34,46 +34,40 @@ export default class AwsIot {
         return;
       }
 
-      this.createDevice(iot, creds);
+      this.createDevice(iot, creds, iotEndpoint);
     });
   }
 
-  private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials) {
-    iot.describeEndpoint({}, (err, data) => {
-      if (err) {
-        this.log("Error getting endpoint address", err);
-        return;
-      }
+  private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials, iotEndpoint: string) {
 
-      const config: DeviceOptions = {
-        region: AWS.config.region,
-        protocol: "wss",
-        accessKeyId: creds.accessKeyId,
-        secretKey: creds.secretAccessKey,
-        sessionToken: creds.sessionToken,
-        port: 443,
-        debug: this.debugMode,
-        host: data.endpointAddress,
-        baseReconnectTimeMs: 500,
-        maximumReconnectTimeMs: 2000
-      };
+    const config: DeviceOptions = {
+      region: AWS.config.region,
+      protocol: "wss",
+      accessKeyId: creds.accessKeyId,
+      secretKey: creds.secretAccessKey,
+      sessionToken: creds.sessionToken,
+      port: 443,
+      debug: this.debugMode,
+      host: iotEndpoint,
+      baseReconnectTimeMs: 500,
+      maximumReconnectTimeMs: 2000
+    };
 
-      try {
-        this.client = new device(config);
-      } catch (deviceErr) {
-        this.log("Error creating device:", deviceErr);
-        return;
-      }
+    try {
+      this.client = new device(config);
+    } catch (deviceErr) {
+      this.log("Error creating device:", deviceErr);
+      return;
+    }
 
-      this.client.on("connect", () => this.onConnect());
-      this.client.on("message", (topic: string, message: any) =>
-        this.onMessage(topic, message)
-      );
-      this.client.on("error", (error: Error | string) => this.onError(error));
-      this.client.on("reconnect", () => this.onReconnect());
-      this.client.on("offline", () => this.onOffline());
-      this.client.on("close", () => this.onClose());
-    });
+    this.client.on("connect", () => this.onConnect());
+    this.client.on("message", (topic: string, message: any) =>
+      this.onMessage(topic, message)
+    );
+    this.client.on("error", (error: Error | string) => this.onError(error));
+    this.client.on("reconnect", () => this.onReconnect());
+    this.client.on("offline", () => this.onOffline());
+    this.client.on("close", () => this.onClose());
   }
 
   public disconnect(): Observable<null> {
