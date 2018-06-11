@@ -1,6 +1,6 @@
 {
   "name": "@mhlabs/aws-iot-ws-broker",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "A broker for client side websocket pub/sub using AWS IoT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
