@@ -31,6 +31,6 @@
     "aws-iot-device-sdk": "^2.2.1",
     "aws-sdk": "^2.177.0",
     "babel-polyfill": "^6.26.0",
-    "rxjs": "^5.5.8"
+    "rxjs": "^6.2.1"
   }
 }
