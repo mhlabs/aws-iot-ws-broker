@@ -1,10 +1,6 @@
 import { device, DeviceOptions } from "aws-iot-device-sdk";
-import { Subject } from "rxjs/Subject";
-import "rxjs/add/operator/filter";
-import "rxjs/add/operator/map";
-import AWS = require("aws-sdk");
-import { Observable } from "rxjs/Observable";
-import { Observer } from "rxjs/Observer";
+import { Subject, Observer, Observable } from "rxjs";
+import * as AWS from "aws-sdk";
 
 export default class AwsIot {
   public readonly events = new Subject<IotEvent>();
@@ -12,7 +8,7 @@ export default class AwsIot {
   private client!: device;
   private topics = new Array<string>();
 
-  constructor(private debugMode = false) { }
+  constructor(private debugMode = false) {}
 
   public connect(creds: AWS.CognitoIdentityCredentials, policyName: string, iotEndpoint: string) {
     if (!creds) {
@@ -39,7 +35,6 @@ export default class AwsIot {
   }
 
   private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials, iotEndpoint: string) {
-
     const config: DeviceOptions = {
       region: AWS.config.region,
       protocol: "wss",
@@ -61,9 +56,7 @@ export default class AwsIot {
     }
 
     this.client.on("connect", () => this.onConnect());
-    this.client.on("message", (topic: string, message: any) =>
-      this.onMessage(topic, message)
-    );
+    this.client.on("message", (topic: string, message: any) => this.onMessage(topic, message));
     this.client.on("error", (error: Error | string) => this.onError(error));
     this.client.on("reconnect", () => this.onReconnect());
     this.client.on("offline", () => this.onOffline());
