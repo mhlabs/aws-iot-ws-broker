@@ -1,6 +1,7 @@
 import { device, DeviceOptions } from "aws-iot-device-sdk";
 import { Subject, Observer, Observable } from "rxjs";
 import * as AWS from "aws-sdk";
+import { v4 as uuidV4 } from "uuid";
 
 export default class AwsIot {
   public readonly events = new Subject<IotEvent>();
@@ -35,7 +36,9 @@ export default class AwsIot {
   }
 
   private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials, iotEndpoint: string) {
+
     const config: DeviceOptions = {
+      clientId: uuidV4(),
       region: AWS.config.region,
       protocol: "wss",
       accessKeyId: creds.accessKeyId,
