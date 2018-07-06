@@ -13,7 +13,7 @@ export default class AwsIot {
 
   public connect(creds: AWS.CognitoIdentityCredentials, policyName: string, iotEndpoint: string) {
     if (!creds) {
-      throw new Error("No AWS Cognito credentials provided");
+      throw new Error("AwsIot: No AWS Cognito credentials provided");
     }
 
     const iot = new AWS.Iot();
@@ -27,7 +27,7 @@ export default class AwsIot {
 
     iot.attachPrincipalPolicy({ principal, policyName }, policyErr => {
       if (policyErr) {
-        this.log("Error attaching policy", policyErr);
+        this.log("AwsIot: Error attaching policy", policyErr);
         return;
       }
 
@@ -55,7 +55,7 @@ export default class AwsIot {
     try {
       this.client = new device(config);
     } catch (deviceErr) {
-      this.log("Error creating device:", deviceErr);
+      this.log("AwsIot: Error creating device:", deviceErr);
       return;
     }
 
@@ -92,24 +92,24 @@ export default class AwsIot {
   public subscribe(topic: string) {
     if (this.client) {
       this.client.subscribe(topic);
-      this.log("Subscribed to topic:", topic);
+      this.log("AwsIot: Subscribed to topic:", topic);
     } else {
       this.topics.push(topic);
-      this.log("Deferring subscription of topic:", topic);
+      this.log("AwsIot: Deferring subscription of topic:", topic);
     }
   }
 
   public unsubscribe(topic: string) {
     if (this.client) {
       this.client.unsubscribe(topic);
-      this.log("Unubscribed from topic:", topic);
+      this.log("AwsIot: Unubscribed from topic:", topic);
     }
   }
 
   private onConnect() {
     this.events.next({ type: IotEventType.Connect });
     for (const topic of this.topics) {
-      this.log("Trying to connect to topic:", topic);
+      this.log("AwsIot: Trying to connect to topic:", topic);
       this.subscribe(topic);
     }
 
@@ -117,7 +117,7 @@ export default class AwsIot {
   }
 
   private onMessage(topic: string, message: any) {
-    this.log(`Message received from topic: ${topic}`, JSON.parse(message));
+    this.log(`AwsIot: Message received from topic: ${topic}`, JSON.parse(message));
     this.events.next({
       type: IotEventType.Message,
       topic: topic,
@@ -126,18 +126,22 @@ export default class AwsIot {
   }
 
   private onClose() {
+    this.log("AwsIot: onClose");
     this.events.next({ type: IotEventType.Close });
   }
 
   private onError(error: Error | string) {
+    this.log("AwsIot: onError", error);
     this.events.next({ type: IotEventType.Error, error: error });
   }
 
   private onReconnect() {
+    this.log("AwsIot: onReconnect");
     this.events.next({ type: IotEventType.Reconnect });
   }
 
   private onOffline() {
+    this.log("AwsIot: onOffline");
     this.events.next({ type: IotEventType.Offline });
   }
 
