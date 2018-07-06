@@ -25,17 +25,14 @@ export default class AwsIot {
 
     const principal = creds.identityId;
 
-    iot.attachPolicy( { policyName: policyName, target: principal },
-        policyErr => {
+    iot.attachPrincipalPolicy({ principal, policyName }, policyErr => {
+      if (policyErr) {
+        this.log("Error attaching policy", policyErr);
+        return;
+      }
 
-          if (policyErr) {
-            this.log("Error attaching policy", policyErr);
-            return;
-          }
-
-        this.createDevice(iot, creds, iotEndpoint);
+      this.createDevice(iot, creds, iotEndpoint);
     });
-
   }
 
   private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials, iotEndpoint: string) {
