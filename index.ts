@@ -48,7 +48,8 @@ export default class AwsIot {
       debug: this.debugMode,
       host: iotEndpoint,
       baseReconnectTimeMs: 500,
-      maximumReconnectTimeMs: 2000
+      maximumReconnectTimeMs: 2000,
+      minimumConnectionTimeMs: 500
     };
 
     try {
