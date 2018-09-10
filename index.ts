@@ -25,7 +25,7 @@ export default class AwsIot {
 
     const principal = creds.identityId;
 
-    iot.attachPrincipalPolicy({ principal, policyName }, policyErr => {
+    iot.attachPolicy({ policyName: policyName, target: principal }, policyErr => {
       if (policyErr) {
         this.log("AwsIot: Error attaching policy", policyErr);
         return;
