@@ -16,7 +16,7 @@ export default class AwsIot {
       throw new Error("AwsIot: No AWS Cognito credentials provided");
     }
 
-    const iot = new AWS.Iot();
+    const iot = new AWS.Iot({ region: process.env.AWS_REGION });
 
     if (!policyName) {
       this.createDevice(iot, creds, iotEndpoint);
