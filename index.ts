@@ -11,12 +11,25 @@ export default class AwsIot {
 
   constructor(private debugMode = false) {}
 
-  public connect(creds: AWS.CognitoIdentityCredentials, policyName: string, iotEndpoint: string) {
+  public connect(
+    creds: AWS.CognitoIdentityCredentials,
+    policyName: string,
+    iotEndpoint: string,
+    region: string
+  ) {
+
     if (!creds) {
       throw new Error("AwsIot: No AWS Cognito credentials provided");
     }
 
-    const iot = new AWS.Iot({ region: process.env.AWS_REGION });
+    AWS.config.credentials = creds;
+    AWS.config.region = region;
+
+    if (!AWS.config.region) {
+      throw new Error("AwsIot: No region in environment.");
+    }
+
+    const iot = new AWS.Iot({ region: AWS.config.region });
 
     if (!policyName) {
       this.createDevice(iot, creds, iotEndpoint);
@@ -25,18 +38,24 @@ export default class AwsIot {
 
     const principal = creds.identityId;
 
-    iot.attachPolicy({ policyName: policyName, target: principal }, policyErr => {
-      if (policyErr) {
-        this.log("AwsIot: Error attaching policy", policyErr);
-        return;
-      }
+    iot.attachPrincipalPolicy(
+      { policyName: policyName, principal: principal },
+      policyErr => {
+        if (policyErr) {
+          this.log("AwsIot: Error attaching policy:", policyErr);
+          return;
+        }
 
-      this.createDevice(iot, creds, iotEndpoint);
-    });
+        this.createDevice(iot, creds, iotEndpoint);
+      }
+    );
   }
 
-  private createDevice(iot: AWS.Iot, creds: AWS.CognitoIdentityCredentials, iotEndpoint: string) {
-
+  private createDevice(
+    iot: AWS.Iot,
+    creds: AWS.CognitoIdentityCredentials,
+    iotEndpoint: string
+  ) {
     const config: DeviceOptions = {
       clientId: uuidV4(),
       region: AWS.config.region,
@@ -60,7 +79,9 @@ export default class AwsIot {
     }
 
     this.client.on("connect", () => this.onConnect());
-    this.client.on("message", (topic: string, message: any) => this.onMessage(topic, message));
+    this.client.on("message", (topic: string, message: any) =>
+      this.onMessage(topic, message)
+    );
     this.client.on("error", (error: Error | string) => this.onError(error));
     this.client.on("reconnect", () => this.onReconnect());
     this.client.on("offline", () => this.onOffline());
@@ -117,7 +138,10 @@ export default class AwsIot {
   }
 
   private onMessage(topic: string, message: any) {
-    this.log(`AwsIot: Message received from topic: ${topic}`, JSON.parse(message));
+    this.log(
+      `AwsIot: Message received from topic: ${topic}`,
+      JSON.parse(message)
+    );
     this.events.next({
       type: IotEventType.Message,
       topic: topic,
