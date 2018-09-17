@@ -2,6 +2,7 @@ import { device, DeviceOptions } from "aws-iot-device-sdk";
 import { Subject, Observer, Observable } from "rxjs";
 import * as AWS from "aws-sdk";
 import { v4 as uuidV4 } from "uuid";
+import * as zlib from "zlib";
 
 export default class AwsIot {
   public readonly events = new Subject<IotEvent>();
@@ -17,7 +18,6 @@ export default class AwsIot {
     iotEndpoint: string,
     region: string
   ) {
-
     if (!creds) {
       throw new Error("AwsIot: No AWS Cognito credentials provided");
     }
@@ -137,7 +137,17 @@ export default class AwsIot {
     this.topics = new Array<string>();
   }
 
+  private decompressMessage(input: string): string {
+    const uncompressed = zlib.unzipSync(input).toString("utf8");
+    return uncompressed;
+  }
+
   private onMessage(topic: string, message: any) {
+    if (topic && topic.endsWith("/gz")) {
+      this.log("Received gzipped message, will decompress.");
+      message = this.decompressMessage(message);
+    }
+
     this.log(
       `AwsIot: Message received from topic: ${topic}`,
       JSON.parse(message)
