@@ -29,11 +29,12 @@
     "typescript": "^3.0.3"
   },
   "dependencies": {
+    "@types/pako": "^1.0.0",
     "aws-iot-device-sdk": "^2.2.1",
     "aws-sdk": "^2.315.0",
     "babel-polyfill": "^6.26.0",
+    "pako": "^1.0.6",
     "rxjs": "^6.3.2",
-    "uuid": "^3.3.2",
-    "zlib": "^1.0.5"
+    "uuid": "^3.3.2"
   }
 }
