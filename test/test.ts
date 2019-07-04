@@ -24,9 +24,9 @@ describe("AWS IOT websocket broker", () => {
   });
 
   it("should defer topic subscriptions before the client is ready", () => {
-    const topicName = "some-topic";
-    const observable = awsIot.subscribe(topicName);
-    observable.pipe(take(1)).subscribe(() => {})
-    expect(awsIot.topicsForTest.map(dT => dT.topic)).to.include(topicName);
+    const topic = "some-topic";
+    const observable = awsIot.subscribe(topic);
+    observable.pipe(take(1)).subscribe(() => {});
+    expect(awsIot["_deferredTopics"].map(dT => dT.topic)).to.include(topic);
   });
 });

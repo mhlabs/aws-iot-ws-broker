@@ -9,10 +9,6 @@ export default class AwsIot {
     return this._events.asObservable();
   }
 
-  get topicsForTest(): Array<IDeferredTopic> {
-    return this._deferredTopics;
-  } 
-
   private _client!: device;
   private _deferredTopics = new Array<IDeferredTopic>();
   private _events = new Subject<IotEvent>();
@@ -131,10 +127,13 @@ export default class AwsIot {
   }
 
   unsubscribe(topic: string) {
-    if (this._client) {
-      this._client.unsubscribe(topic);
-      this.log(`AwsIot: Unubscribed from topic: ${topic}`);
+    if (!this._client) {
+      this.log("No client exists when unsubscribing");
+      return;
     }
+
+    this._client.unsubscribe(topic);
+    this.log(`AwsIot: Unubscribed from topic: ${topic}`);
   }
 
   private onConnect() {
