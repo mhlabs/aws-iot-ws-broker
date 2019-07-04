@@ -1,32 +1,39 @@
-import { device, DeviceOptions } from 'aws-iot-device-sdk';
-import { Subject, Observer, Observable } from 'rxjs';
-import * as AWS from 'aws-sdk';
-import { v4 as uuidV4 } from 'uuid';
-import * as pako from 'pako';
+import { device, DeviceOptions } from "aws-iot-device-sdk";
+import { Subject, Observer, Observable } from "rxjs";
+import * as AWS from "aws-sdk";
+import { v4 as uuidV4 } from "uuid";
+import * as pako from "pako";
 
 export default class AwsIot {
-  public readonly events = new Subject<IotEvent>();
+  get events(): Observable<IotEvent> {
+    return this._events.asObservable();
+  }
 
-  private client!: device;
-  private topics = new Array<string>();
+  get topicsForTest(): Array<IDeferredTopic> {
+    return this._deferredTopics;
+  } 
+
+  private _client!: device;
+  private _deferredTopics = new Array<IDeferredTopic>();
+  private _events = new Subject<IotEvent>();
 
   constructor(private debugMode = false) {}
 
-  public connect(
+  connect(
     creds: AWS.CognitoIdentityCredentials,
     policyName: string,
     iotEndpoint: string,
     region: string
   ) {
     if (!creds) {
-      throw new Error('AwsIot: No AWS Cognito credentials provided');
+      throw new Error("AwsIot: No AWS Cognito credentials provided");
     }
 
     AWS.config.credentials = creds;
     AWS.config.region = region;
 
     if (!AWS.config.region) {
-      throw new Error('AwsIot: No region in environment.');
+      throw new Error("AwsIot: No region in environment.");
     }
 
     const iot = new AWS.Iot({ region: AWS.config.region });
@@ -42,7 +49,7 @@ export default class AwsIot {
       { policyName: policyName, principal: principal },
       policyErr => {
         if (policyErr) {
-          this.log('AwsIot: Error attaching policy:', policyErr);
+          this.log("AwsIot: Error attaching policy:", policyErr);
           return;
         }
 
@@ -59,7 +66,7 @@ export default class AwsIot {
     const config: DeviceOptions = {
       clientId: uuidV4(),
       region: AWS.config.region,
-      protocol: 'wss',
+      protocol: "wss",
       accessKeyId: creds.accessKeyId,
       secretKey: creds.secretAccessKey,
       sessionToken: creds.sessionToken,
@@ -72,33 +79,33 @@ export default class AwsIot {
     };
 
     try {
-      this.client = new device(config);
+      this._client = new device(config);
     } catch (deviceErr) {
-      this.log('AwsIot: Error creating device:', deviceErr);
+      this.log("AwsIot: Error creating device:", deviceErr);
       return;
     }
 
-    this.client.on('connect', () => this.onConnect());
-    this.client.on('message', (topic: string, message: any) =>
+    this._client.on("connect", () => this.onConnect());
+    this._client.on("message", (topic: string, message: any) =>
       this.onMessage(topic, message)
     );
-    this.client.on('error', (error: Error | string) => this.onError(error));
-    this.client.on('reconnect', () => this.onReconnect());
-    this.client.on('offline', () => this.onOffline());
-    this.client.on('close', () => this.onClose());
+    this._client.on("error", (error: Error | string) => this.onError(error));
+    this._client.on("reconnect", () => this.onReconnect());
+    this._client.on("offline", () => this.onOffline());
+    this._client.on("close", () => this.onClose());
   }
 
-  public disconnect(): Observable<null> {
+  disconnect(): Observable<null> {
     return Observable.create((observer: Observer<null>) => {
-      this.client.end(true, () => {
+      this._client.end(true, () => {
         observer.next(null);
         observer.complete();
       });
     });
   }
 
-  public updateCredentials(credentials: AWS.CognitoIdentityCredentials) {
-    this.client.updateWebSocketCredentials(
+  updateCredentials(credentials: AWS.CognitoIdentityCredentials) {
+    this._client.updateWebSocketCredentials(
       credentials.accessKeyId,
       credentials.secretAccessKey,
       credentials.sessionToken,
@@ -106,47 +113,50 @@ export default class AwsIot {
     );
   }
 
-  public send(topic: string, message: any) {
-    this.client.publish(topic, message);
+  send(topic: string, message: any) {
+    this._client.publish(topic, message);
   }
 
-  public subscribe(topic: string) {
-    if (this.client) {
-      this.client.subscribe(topic);
-      this.log('AwsIot: Subscribed to topic:', topic);
-    } else {
-      this.topics.push(topic);
-      this.log('AwsIot: Deferring subscription of topic:', topic);
-    }
+  subscribe(topic: string): Observable<string> {
+    return new Observable((observer: Observer<string>) => {
+      if (!this._client) {
+        this._deferredTopics = [...this._deferredTopics, { topic, observer }];
+        this.log(`AwsIot: Deferring subscription of topic: ${topic}`);
+        return;
+      }
+
+      this._subscribe(topic, observer);
+      this.log(`AwsIot: Subscribed to topic: ${topic}`);
+    });
   }
 
-  public unsubscribe(topic: string) {
-    if (this.client) {
-      this.client.unsubscribe(topic);
-      this.log('AwsIot: Unubscribed from topic:', topic);
+  unsubscribe(topic: string) {
+    if (this._client) {
+      this._client.unsubscribe(topic);
+      this.log(`AwsIot: Unubscribed from topic: ${topic}`);
     }
   }
 
   private onConnect() {
-    this.events.next({ type: IotEventType.Connect });
-    for (const topic of this.topics) {
-      this.log('AwsIot: Trying to connect to topic:', topic);
-      this.subscribe(topic);
+    this._events.next({ type: IotEventType.Connect });
+    for (const { topic, observer } of this._deferredTopics) {
+      this.log("AwsIot: Trying to connect to topic:", topic);
+      this._subscribe(topic, observer);
     }
 
-    this.topics = new Array<string>();
+    this._deferredTopics = new Array<IDeferredTopic>();
   }
 
   private decompressMessage(input: any): string {
     const inputString = input.toString();
-    const decoded = Buffer.from(inputString, 'base64');
-    const uncompressed = pako.inflate(decoded, { to: 'string' });
+    const decoded = Buffer.from(inputString, "base64");
+    const uncompressed = pako.inflate(decoded, { to: "string" });
 
     return uncompressed;
   }
 
   private onMessage(topic: string, message: any) {
-    if (topic && topic.endsWith('/gz')) {
+    if (topic && topic.endsWith("/gz")) {
       message = this.decompressMessage(message);
     }
 
@@ -154,31 +164,41 @@ export default class AwsIot {
       `AwsIot: Message received from topic: ${topic}`,
       JSON.parse(message)
     );
-    this.events.next({
+    this._events.next({
       type: IotEventType.Message,
       topic: topic,
       message: JSON.parse(message)
     });
   }
 
+  private _subscribe(topic: string, observer: Observer<string>) {
+    if (!this._client) {
+      throw new Error("No client exists");
+    }
+
+    this._client.subscribe(topic);
+    observer.next(topic);
+    observer.complete();
+  }
+
   private onClose() {
-    this.log('AwsIot: onClose');
-    this.events.next({ type: IotEventType.Close });
+    this.log("AwsIot: onClose");
+    this._events.next({ type: IotEventType.Close });
   }
 
   private onError(error: Error | string) {
-    this.log('AwsIot: onError', error);
-    this.events.next({ type: IotEventType.Error, error: error });
+    this.log("AwsIot: onError", error);
+    this._events.next({ type: IotEventType.Error, error: error });
   }
 
   private onReconnect() {
-    this.log('AwsIot: onReconnect');
-    this.events.next({ type: IotEventType.Reconnect });
+    this.log("AwsIot: onReconnect");
+    this._events.next({ type: IotEventType.Reconnect });
   }
 
   private onOffline() {
-    this.log('AwsIot: onOffline');
-    this.events.next({ type: IotEventType.Offline });
+    this.log("AwsIot: onOffline");
+    this._events.next({ type: IotEventType.Offline });
   }
 
   private log(...args: any[]) {
@@ -188,7 +208,7 @@ export default class AwsIot {
   }
 }
 
-export { DeviceOptions } from 'aws-iot-device-sdk';
+export { DeviceOptions } from "aws-iot-device-sdk";
 
 export interface IotEvent {
   type: IotEventType;
@@ -198,10 +218,15 @@ export interface IotEvent {
 }
 
 export enum IotEventType {
-  Connect = 'connect',
-  Message = 'message',
-  Close = 'close',
-  Error = 'error',
-  Reconnect = 'reconnect',
-  Offline = 'offline'
+  Connect = "connect",
+  Message = "message",
+  Close = "close",
+  Error = "error",
+  Reconnect = "reconnect",
+  Offline = "offline"
+}
+
+interface IDeferredTopic {
+  topic: string;
+  observer: Observer<string>;
 }
