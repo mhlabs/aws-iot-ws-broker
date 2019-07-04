@@ -122,7 +122,6 @@ export default class AwsIot {
       }
 
       this._subscribe(topic, observer);
-      this.log(`AwsIot: Subscribed to topic: ${topic}`);
     });
   }
 
@@ -178,6 +177,7 @@ export default class AwsIot {
     this._client.subscribe(topic);
     observer.next(topic);
     observer.complete();
+    this.log(`AwsIot: Subscribed to topic: ${topic}`);
   }
 
   private onClose() {
