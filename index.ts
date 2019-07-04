@@ -225,7 +225,7 @@ export enum IotEventType {
   Offline = "offline"
 }
 
-interface IDeferredTopic {
+export interface IDeferredTopic {
   topic: string;
   observer: Observer<string>;
 }
