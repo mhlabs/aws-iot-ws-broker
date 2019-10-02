@@ -1,6 +1,10 @@
 import { device, DeviceOptions } from "aws-iot-device-sdk";
 import { Subject, Observer, Observable } from "rxjs";
-import * as AWS from "aws-sdk";
+// Do not import directly from 'aws-sdk' (generates 2MB extra javascript);
+import * as Iot from "aws-sdk/clients/iot";
+import { config as AWSConfig } from "aws-sdk/global";
+import { CognitoIdentityCredentials } from "aws-sdk/lib/core";
+// ---
 import { v4 as uuidV4 } from "uuid";
 import * as pako from "pako";
 
@@ -13,10 +17,10 @@ export default class AwsIot {
   private _deferredTopics = new Array<IDeferredTopic>();
   private _events = new Subject<IotEvent>();
 
-  constructor(private debugMode = false) {}
+  constructor(private debugMode = false) { }
 
   connect(
-    creds: AWS.CognitoIdentityCredentials,
+    creds: CognitoIdentityCredentials,
     policyName: string,
     iotEndpoint: string,
     region: string
@@ -25,14 +29,14 @@ export default class AwsIot {
       throw new Error("AwsIot: No AWS Cognito credentials provided");
     }
 
-    AWS.config.credentials = creds;
-    AWS.config.region = region;
+    AWSConfig.credentials = creds;
+    AWSConfig.region = region;
 
-    if (!AWS.config.region) {
+    if (!AWSConfig.region) {
       throw new Error("AwsIot: No region in environment.");
     }
 
-    const iot = new AWS.Iot({ region: AWS.config.region });
+    const iot = new Iot({ region: AWSConfig.region });
 
     if (!policyName) {
       this.createDevice(iot, creds, iotEndpoint);
@@ -55,13 +59,13 @@ export default class AwsIot {
   }
 
   private createDevice(
-    iot: AWS.Iot,
-    creds: AWS.CognitoIdentityCredentials,
+    iot: Iot,
+    creds: CognitoIdentityCredentials,
     iotEndpoint: string
   ) {
     const config: DeviceOptions = {
       clientId: uuidV4(),
-      region: AWS.config.region,
+      region: AWSConfig.region,
       protocol: "wss",
       accessKeyId: creds.accessKeyId,
       secretKey: creds.secretAccessKey,
@@ -100,7 +104,7 @@ export default class AwsIot {
     });
   }
 
-  updateCredentials(credentials: AWS.CognitoIdentityCredentials) {
+  updateCredentials(credentials: CognitoIdentityCredentials) {
     this._client.updateWebSocketCredentials(
       credentials.accessKeyId,
       credentials.secretAccessKey,
