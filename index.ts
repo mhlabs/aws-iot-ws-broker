@@ -1,10 +1,8 @@
 import { device, DeviceOptions } from "aws-iot-device-sdk";
 import { Subject, Observer, Observable } from "rxjs";
-// Do not import directly from 'aws-sdk' (generates 2MB extra javascript);
 import * as Iot from "aws-sdk/clients/iot";
 import { config as AWSConfig } from "aws-sdk/global";
 import { CognitoIdentityCredentials } from "aws-sdk/lib/core";
-// ---
 import { v4 as uuidV4 } from "uuid";
 import * as pako from "pako";
 
